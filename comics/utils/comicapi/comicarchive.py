@@ -156,9 +156,10 @@ class ZipArchiver:
 
             # Preserve the old comment
             comment = otherArchive.getArchiveComment()
-            if comment is not None:
-                if not self.writeZipComment(self.path, comment):
-                    return False
+            if comment is not None and not self.writeZipComment(
+                self.path, comment
+            ):
+                return False
         except Exception as e:
             print >> sys.stderr, u"Error while copying to {0}: {1}".format(
                 self.path, e)
@@ -221,7 +222,7 @@ class FolderArchiver:
 
     def listFiles(self, folder):
 
-        itemlist = list()
+        itemlist = []
 
         for item in os.listdir(folder):
             itemlist.append(item)
@@ -279,11 +280,8 @@ class PdfArchiver:
         return False
 
     def getArchiveFilenameList(self):
-        out = []
         pdf = PdfFileReader(open(self.path, 'rb'))
-        for page in range(1, pdf.getNumPages() + 1):
-            out.append("/%04d.jpg" % (page))
-        return out
+        return ["/%04d.jpg" % (page) for page in range(1, pdf.getNumPages() + 1)]
 
 
 class ComicArchive:
@@ -357,14 +355,11 @@ class ComicArchive:
         return self.isWritable()
 
     def seemsToBeAComicArchive(self):
-        if (
+        return bool((
             (self.isZip() or self.isPdf())
             and
             (self.getNumberOfPages() > 0)
-        ):
-            return True
-        else:
-            return False
+        ))
 
     def readMetadata(self, style):
         if style == MetaDataStyle.CIX:
@@ -443,7 +438,7 @@ class ComicArchive:
             return None
 
         # count the length of every filename, and count occurences
-        length_buckets = dict()
+        length_buckets = {}
         for name in name_list:
             fname = os.path.split(name)[1]
             length = len(fname)
@@ -466,7 +461,7 @@ class ComicArchive:
         # we are only going to consider the final image file:
         final_name = os.path.split(name_list[count - 1])[1]
 
-        common_length_list = list()
+        common_length_list = []
         for name in name_list:
             if len(os.path.split(name)[1]) == mode_length:
                 common_length_list.append(os.path.split(name)[1])
@@ -544,17 +539,16 @@ class ComicArchive:
         return self.has_cbi
 
     def writeCBI(self, metadata):
-        if metadata is not None:
-            self.applyArchiveInfoToMetadata(metadata)
-            cbi_string = ComicBookInfo().stringFromMetadata(metadata)
-            write_success = self.archiver.setArchiveComment(cbi_string)
-            if write_success:
-                self.has_cbi = True
-                self.cbi_md = metadata
-            self.resetCache()
-            return write_success
-        else:
+        if metadata is None:
             return False
+        self.applyArchiveInfoToMetadata(metadata)
+        cbi_string = ComicBookInfo().stringFromMetadata(metadata)
+        write_success = self.archiver.setArchiveComment(cbi_string)
+        if write_success:
+            self.has_cbi = True
+            self.cbi_md = metadata
+        self.resetCache()
+        return write_success
 
     def removeCBI(self):
         if self.hasCBI():
@@ -575,11 +569,13 @@ class ComicArchive:
                 self.cix_md = ComicInfoXML().metadataFromString(raw_cix)
 
             # validate the existing page list (make sure count is correct)
-            if len(self.cix_md.pages) != 0:
-                if len(self.cix_md.pages) != self.getNumberOfPages():
-                    # pages array doesn't match the actual number of images we're seeing
-                    # in the archive, so discard the data
-                    self.cix_md.pages = []
+            if (
+                len(self.cix_md.pages) != 0
+                and len(self.cix_md.pages) != self.getNumberOfPages()
+            ):
+                # pages array doesn't match the actual number of images we're seeing
+                # in the archive, so discard the data
+                self.cix_md.pages = []
 
             if len(self.cix_md.pages) == 0:
                 self.cix_md.setDefaultPageList(self.getNumberOfPages())
@@ -596,19 +592,18 @@ class ComicArchive:
         return raw_cix
 
     def writeCIX(self, metadata):
-        if metadata is not None:
-            self.applyArchiveInfoToMetadata(metadata, calc_page_sizes=True)
-            cix_string = ComicInfoXML().stringFromMetadata(metadata)
-            write_success = self.archiver.writeArchiveFile(
-                self.ci_xml_filename,
-                cix_string)
-            if write_success:
-                self.has_cix = True
-                self.cix_md = metadata
-            self.resetCache()
-            return write_success
-        else:
+        if metadata is None:
             return False
+        self.applyArchiveInfoToMetadata(metadata, calc_page_sizes=True)
+        cix_string = ComicInfoXML().stringFromMetadata(metadata)
+        write_success = self.archiver.writeArchiveFile(
+            self.ci_xml_filename,
+            cix_string)
+        if write_success:
+            self.has_cix = True
+            self.cix_md = metadata
+        self.resetCache()
+        return write_success
 
     def removeCIX(self):
         if self.hasCIX():
@@ -623,12 +618,15 @@ class ComicArchive:
 
     def hasCIX(self):
         if self.has_cix is None:
-            if not self.seemsToBeAComicArchive():
+            if (
+                not self.seemsToBeAComicArchive()
+                or self.seemsToBeAComicArchive()
+                and self.ci_xml_filename
+                not in self.archiver.getArchiveFilenameList()
+            ):
                 self.has_cix = False
-            elif self.ci_xml_filename in self.archiver.getArchiveFilenameList():
-                self.has_cix = True
             else:
-                self.has_cix = False
+                self.has_cix = True
         return self.has_cix
 
     def readCoMet(self):
@@ -670,27 +668,26 @@ class ComicArchive:
 
     def writeCoMet(self, metadata):
 
-        if metadata is not None:
-            if not self.hasCoMet():
-                self.comet_filename = self.comet_default_filename
-
-            self.applyArchiveInfoToMetadata(metadata)
-            # Set the coverImage value, if it's not the first page
-            cover_idx = int(metadata.getCoverPageIndexList()[0])
-            if cover_idx != 0:
-                metadata.coverImage = self.getPageName(cover_idx)
-
-            comet_string = CoMet().stringFromMetadata(metadata)
-            write_success = self.archiver.writeArchiveFile(
-                self.comet_filename,
-                comet_string)
-            if write_success:
-                self.has_comet = True
-                self.comet_md = metadata
-            self.resetCache()
-            return write_success
-        else:
+        if metadata is None:
             return False
+        if not self.hasCoMet():
+            self.comet_filename = self.comet_default_filename
+
+        self.applyArchiveInfoToMetadata(metadata)
+        # Set the coverImage value, if it's not the first page
+        cover_idx = int(metadata.getCoverPageIndexList()[0])
+        if cover_idx != 0:
+            metadata.coverImage = self.getPageName(cover_idx)
+
+        comet_string = CoMet().stringFromMetadata(metadata)
+        write_success = self.archiver.writeArchiveFile(
+            self.comet_filename,
+            comet_string)
+        if write_success:
+            self.has_comet = True
+            self.comet_md = metadata
+        self.resetCache()
+        return write_success
 
     def removeCoMet(self):
         if self.hasCoMet():
@@ -704,29 +701,31 @@ class ComicArchive:
         return True
 
     def hasCoMet(self):
-        if self.has_comet is None:
-            self.has_comet = False
-            if not self.seemsToBeAComicArchive():
-                return self.has_comet
+        if self.has_comet is not None:
+            return
 
-            # look at all xml files in root, and search for CoMet data, get
-            # first
-            for n in self.archiver.getArchiveFilenameList():
-                if (os.path.dirname(n) == "" and
-                        os.path.splitext(n)[1].lower() == '.xml'):
-                    # read in XML file, and validate it
-                    try:
-                        data = self.archiver.readArchiveFile(n)
-                    except:
-                        data = ""
-                        print >> sys.stderr, u"Error reading in Comet XML for validation!"
-                    if CoMet().validateString(data):
-                        # since we found it, save it!
-                        self.comet_filename = n
-                        self.has_comet = True
-                        break
-
+        self.has_comet = False
+        if not self.seemsToBeAComicArchive():
             return self.has_comet
+
+        # look at all xml files in root, and search for CoMet data, get
+        # first
+        for n in self.archiver.getArchiveFilenameList():
+            if (os.path.dirname(n) == "" and
+                    os.path.splitext(n)[1].lower() == '.xml'):
+                # read in XML file, and validate it
+                try:
+                    data = self.archiver.readArchiveFile(n)
+                except:
+                    data = ""
+                    print >> sys.stderr, u"Error reading in Comet XML for validation!"
+                if CoMet().validateString(data):
+                    # since we found it, save it!
+                    self.comet_filename = n
+                    self.has_comet = True
+                    break
+
+        return self.has_comet
 
     def applyArchiveInfoToMetadata(self, md, calc_page_sizes=False):
         md.pageCount = self.getNumberOfPages()
@@ -769,9 +768,8 @@ class ComicArchive:
             metadata.year = fnp.year
         if fnp.issue_count != "":
             metadata.issueCount = fnp.issue_count
-        if parse_scan_info:
-            if fnp.remainder != "":
-                metadata.scanInfo = fnp.remainder
+        if parse_scan_info and fnp.remainder != "":
+            metadata.scanInfo = fnp.remainder
 
         metadata.isEmpty = False
 

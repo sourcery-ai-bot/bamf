@@ -10,12 +10,11 @@ from .comicapi.comicarchive import ComicArchive
 class ImageAPIHandler(object):
 
     def getContentType(self, image_data):
-        img = 'jpg'
         imtype = imghdr.what(None, image_data)
         if imtype is not None:
             return imtype
 
-        return img
+        return 'jpg'
 
     def resizeImage(self, max_height, image_data):
         i = Image.open(io.BytesIO(image_data))
@@ -33,6 +32,4 @@ class ImageAPIHandler(object):
         image_data = ca.getPage(int(page_num))
         image_type = self.getContentType(image_data)
         base64_data = base64.b64encode(image_data).decode('ascii')
-        uri = 'data:%s;base64,%s' % (image_type, base64_data)
-
-        return uri
+        return 'data:%s;base64,%s' % (image_type, base64_data)

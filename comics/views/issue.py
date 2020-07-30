@@ -84,12 +84,10 @@ def update_issue_status(request, slug):
     if request.GET.get('complete', '') == '1':
         issue.leaf = 1
         issue.status = 2
-        issue.save()
     else:
         issue.leaf = int(request.GET.get('leaf', ''))
         issue.status = 1
-        issue.save()
-
+    issue.save()
     data = {'saved': 1}
 
     return JsonResponse(data)

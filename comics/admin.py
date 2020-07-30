@@ -183,8 +183,7 @@ class SeriesAdmin(admin.ModelAdmin):
     )
 
     def get_queryset(self, request):
-        queryset = Series.objects.prefetch_related('issue_set')
-        return queryset
+        return Series.objects.prefetch_related('issue_set')
 
     def mark_as_read(self, request, queryset):
         issues_count = 0

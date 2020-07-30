@@ -50,7 +50,7 @@ def crop_from_center(image, width, height):
     img = image
     center_width = img.size[0] / 2
     center_height = img.size[1] / 2
-    cropped = img.crop(
+    return img.crop(
         (
             center_width - width / 2,
             center_height - height / 2,
@@ -58,8 +58,6 @@ def crop_from_center(image, width, height):
             center_height + height / 2
         )
     )
-
-    return cropped
 
 
 def create_series_sortname(title):

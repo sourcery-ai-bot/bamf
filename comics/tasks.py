@@ -14,54 +14,40 @@ def import_comic_files_task():
 @task()
 def refresh_issue_task(cvid):
     ci = ComicImporter()
-    success = ci.refreshIssueData(cvid)
-
-    return success
+    return ci.refreshIssueData(cvid)
 
 
 @task()
 def refresh_series_task(cvid):
     ci = ComicImporter()
-    success = ci.refreshSeriesData(cvid)
-
-    return success
+    return ci.refreshSeriesData(cvid)
 
 
 @task()
 def refresh_publisher_task(cvid):
     ci = ComicImporter()
-    success = ci.refreshPublisherData(cvid)
-
-    return success
+    return ci.refreshPublisherData(cvid)
 
 
 @task()
 def refresh_character_task(cvid):
     ci = ComicImporter()
-    success = ci.refreshCharacterData(cvid)
-
-    return success
+    return ci.refreshCharacterData(cvid)
 
 
 @task()
 def refresh_creator_task(cvid):
     ci = ComicImporter()
-    success = ci.refreshCreatorData(cvid)
-
-    return success
+    return ci.refreshCreatorData(cvid)
 
 
 @task()
 def refresh_team_task(cvid):
     ci = ComicImporter()
-    success = ci.refreshTeamData(cvid)
-
-    return success
+    return ci.refreshTeamData(cvid)
 
 
 @task()
 def refresh_arc_task(cvid):
     ci = ComicImporter()
-    success = ci.refreshArcData(cvid)
-
-    return success
+    return ci.refreshArcData(cvid)

@@ -88,10 +88,7 @@ class ComicImporter(object):
         remove = False
 
         def inFolderlist(filepath, pathlist):
-            for p in pathlist:
-                if p in filepath:
-                    return True
-            return False
+            return any(p in filepath for p in pathlist)
 
         if not (os.path.exists(comic.file)):
             self.logger.info("Removing missing {0}".format(comic.file))
@@ -418,9 +415,7 @@ class ComicImporter(object):
             self.logger.error('s' % e)
             return None
 
-        data = self.getCVObjectData(response['results'])
-
-        return data
+        return self.getCVObjectData(response['results'])
 
     def getPublisher(self, response_issue):
         series_params = self.base_params
@@ -451,9 +446,7 @@ class ComicImporter(object):
             self.logger.error('%s', e)
             return None
 
-        data = self.getCVObjectData(response['results'])
-
-        return data
+        return self.getCVObjectData(response['results'])
 
     def getDetailInfo(self, db_obj, fields, api_url):
         params = self.base_params

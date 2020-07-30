@@ -25,10 +25,7 @@ class FileNameParser:
         return ' ' * len(m.group())
 
     def fixSpaces(self, string, remove_dashes=True):
-        if remove_dashes:
-            placeholders = ['[-_]', '  +']
-        else:
-            placeholders = ['[_]', '  +']
+        placeholders = ['[-_]', '  +'] if remove_dashes else ['[_]', '  +']
         for ph in placeholders:
             string = re.sub(ph, self.repl, string)
         return string  # .strip()

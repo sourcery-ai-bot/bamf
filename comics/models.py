@@ -172,10 +172,7 @@ class Series(models.Model):
 
     @property
     def average_rating(self):
-        l = []
-        for issue in self.issue_set.all():
-            l.append(issue.id)
-
+        l = [issue.id for issue in self.issue_set.all()]
         rating = Rating.objects.filter(object_id__in=l).exclude(
             average=0).aggregate(Avg('average'))
 
